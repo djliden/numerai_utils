@@ -4,11 +4,13 @@ import numpy as np
 from fastai.tabular.all import *
 from pathlib import Path
 
-from src.utils.setup import credential
-from src.utils.setup import download_current
-from src.utils.setup import init_numerapi
+from utils.setup import credential
+from utils.setup import download_current
+from utils.setup import init_numerapi
 
-from src.utils.prep_data import get_tabular_pandas_dl
+from utils.prep_data import get_tabular_pandas_dl
+
+from utils.metrics import sharpe, val_corr
 
 # set flags / seeds
 torch.backends.cudnn.benchmark = True
@@ -18,6 +20,7 @@ torch.cuda.manual_seed(1)
 
 # Start with main code
 if __name__ == '__main__':
+    torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Setup Credentials
     credential()
     napi = init_numerapi()
@@ -30,4 +33,38 @@ if __name__ == '__main__':
     tourn = Path(f"./input/numerai_dataset_{round}/numerai_tournament_data.csv")
 
     # Get DataLoaders
+    print("setting up fastai dataloaders")
     dls = get_tabular_pandas_dl(train=train, tourn=tourn)
+
+    # Model Setup
+    print("setting up the fastai model")
+    learn = tabular_learner(dls, layers=[200,100],
+                        loss_func=MSELossFlat(),
+                        metrics = [PearsonCorrCoef()])
+    #learn.lr_find()
+
+    # Train Model
+    print("training the model")
+    learn.fit_one_cycle(1, wd = 2)
+
+    # Get Metrics
+    ## Sharpe
+    print("Making Predictions on Validation Set")
+    prediction, target = learn.get_preds()
+    prediction = prediction.numpy().squeeze()
+    target = target.numpy().squeeze()
+    prediction, target
+
+    era = dls.valid_ds.items['era']
+    eval_df = pd.DataFrame({'prediction':prediction, 'target':target, 'era':era}).reset_index()
+    sharpe = sharpe(eval_df)
+
+    ## Corr
+    correl = val_corr(eval_df)
+
+    print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
+
+    #print("Saving Predictions")
+
+exit()
+
