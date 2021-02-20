@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # Get DataLoaders
     print("setting up fastai dataloaders")
-    dls = get_tabular_pandas_dl(train=train, tourn=tourn, refresh=False, save=False)
+    dls = get_tabular_pandas_dl(train=train, tourn=tourn, refresh=False, save=True)
 
     # Model Setup
     print("setting up the fastai model")
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     # Train Model
     print("training the model")
-    learn.fit_one_cycle(1, wd = 2)
+    learn.fit_one_cycle(2, wd = 2)
 
     # Get Metrics
     ## Sharpe
