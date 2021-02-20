@@ -13,8 +13,6 @@ from utils.setup import init_numerapi
 from utils.prep_data import get_tabular_pandas_dl
 
 from utils.metrics import sharpe, val_corr
-from fastprogress.fastprogress import force_console_behavior
-
 
 # set flags / seeds
 import gc
@@ -48,15 +46,18 @@ if __name__ == '__main__':
                         loss_func=MSELossFlat(),
                         metrics = [PearsonCorrCoef()])
                         
-    master_bar, progress_bar = force_console_behavior()
+    #master_bar, progress_bar = force_console_behavior()
     # Train Model
     print("training the model")
-    learn.fit_one_cycle(2, wd = 2)
+    with learn.no_bar():
+        learn.fit_one_cycle(2, wd = 2)
 
     # Get Metrics
     ## Sharpe
     print("Making Predictions on Validation Set")
-    prediction, target = learn.get_preds()
+    with learn.no_bar():
+        prediction, target = learn.get_preds()
+    
     prediction = prediction.numpy().squeeze()
     target = target.numpy().squeeze()
     prediction, target
