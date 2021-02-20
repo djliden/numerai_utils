@@ -49,8 +49,8 @@ if __name__ == '__main__':
     #master_bar, progress_bar = force_console_behavior()
     # Train Model
     print("training the model")
-    with learn.no_bar():
-        learn.fit_one_cycle(2, wd = 2)
+    #with learn.no_bar():
+    learn.fit_one_cycle(2, wd = 2)
 
     # Get Metrics
     ## Sharpe
