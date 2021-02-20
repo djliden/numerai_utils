@@ -1,3 +1,5 @@
+# Try to figure out segfault?
+import faulthandler
 # import dependencies
 import pandas as pd
 import numpy as np
@@ -13,6 +15,7 @@ from utils.prep_data import get_tabular_pandas_dl
 from utils.metrics import sharpe, val_corr
 
 # set flags / seeds
+import gc
 torch.backends.cudnn.benchmark = True
 np.random.seed(1)
 torch.manual_seed(1)
@@ -20,6 +23,7 @@ torch.cuda.manual_seed(1)
 
 # Start with main code
 if __name__ == '__main__':
+    faulthandler.enable()
     torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Setup Credentials
     credential()
@@ -34,18 +38,20 @@ if __name__ == '__main__':
 
     # Get DataLoaders
     print("setting up fastai dataloaders")
-    dls = get_tabular_pandas_dl(train=train, tourn=tourn)
+    dls = get_tabular_pandas_dl(train=train, tourn=tourn, refresh=False, save=False)
 
     # Model Setup
     print("setting up the fastai model")
     learn = tabular_learner(dls, layers=[200,100],
                         loss_func=MSELossFlat(),
                         metrics = [PearsonCorrCoef()])
-    #learn.lr_find()
+                        
 
     # Train Model
     print("training the model")
     learn.fit_one_cycle(1, wd = 2)
+    del learn
+    gc.collect()
 
     # Get Metrics
     ## Sharpe
@@ -65,6 +71,3 @@ if __name__ == '__main__':
     print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
 
     #print("Saving Predictions")
-
-exit()
-
