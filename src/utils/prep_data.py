@@ -7,6 +7,7 @@ def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, use_era:bool = False):
     print("Reading tournament data in chunks")
     iter_csv = pd.read_csv(tourn, iterator=True, chunksize=1e5)
     val_df = pd.concat([chunk[chunk['data_type'] == 'validation'] for chunk in tqdm(iter_csv)])
+    iter_csv.close()
 
     training_data = pd.read_csv(train)
     training_data = pd.concat([training_data, val_df])
