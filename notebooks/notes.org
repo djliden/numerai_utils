@@ -1,2 +1,6 @@
 * Resources
 - https://wandb.ai/carlolepelaars/numerai_tutorial/reports/How-to-get-Started-With-Numerai--VmlldzoxODU0NTQ
+
+
+* Code Notes
+- ~from importlib import reload~

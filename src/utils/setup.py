@@ -18,17 +18,14 @@ def credential():
     else:
         os.environ["NUMERAI_SECRET_KEY"] = getpass("Please enter your Numerai Secret Key. You can find your key here: https://numer.ai/submit -> ")
     
+    
+def init_numerapi():
     public_key = os.environ.get("NUMERAI_PUBLIC_KEY")
     secret_key = os.environ.get("NUMERAI_SECRET_KEY")
-    
-    global napi
     napi = numerapi.NumerAPI(verbosity="info", public_id=public_key, secret_key=secret_key)
-    print("numerapi initialized as 'napi'")
+    return(napi)
 
-
-
-
-def download_current(refresh:bool = False, path:str = "./input/"):
+def download_current(refresh:bool = False, path:str = "./input/", napi=init_numerapi()):
     "Check if the current dataset exists and download if not"
     data_dir = Path(path)
     round = napi.get_current_round()
