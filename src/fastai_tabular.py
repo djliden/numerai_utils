@@ -50,8 +50,6 @@ if __name__ == '__main__':
     # Train Model
     print("training the model")
     learn.fit_one_cycle(1, wd = 2)
-    del learn
-    gc.collect()
 
     # Get Metrics
     ## Sharpe
@@ -71,3 +69,5 @@ if __name__ == '__main__':
     print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
 
     #print("Saving Predictions")
+    del learn
+    gc.collect()
