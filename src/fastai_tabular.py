@@ -6,6 +6,7 @@ import numpy as np
 from fastai.tabular.all import *
 from pathlib import Path
 
+from utils.eval import FastSubmission
 from utils.setup import credential
 from utils.setup import download_current
 from utils.setup import init_numerapi
@@ -55,8 +56,8 @@ if __name__ == '__main__':
     # Get Metrics
     ## Sharpe
     print("Making Predictions on Validation Set")
-    with learn.no_bar():
-        prediction, target = learn.get_preds()
+    #with learn.no_bar():
+    prediction, target = learn.get_preds()
     
     prediction = prediction.numpy().squeeze()
     target = target.numpy().squeeze()
@@ -70,7 +71,14 @@ if __name__ == '__main__':
     correl = val_corr(eval_df)
 
     print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
+    print(f'Generating and Saving Predictions')
+    predictions = FastSubmission(dls = dls, learner=learn, chunk=True,
+                                 chunksize = 100000, numerapi = napi,
+                                 filename = tourn)
+    print("Generating Predictions...\n")
+    predictions.get_predictions(print=False)
 
-    #print("Saving Predictions")
+    predictions.save_predictions()
+    print("Predictions Saved!")
     del learn
     gc.collect()
