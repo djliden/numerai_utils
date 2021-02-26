@@ -56,8 +56,8 @@ if __name__ == '__main__':
     # Get Metrics
     ## Sharpe
     print("Making Predictions on Validation Set")
-    #with learn.no_bar():
-    prediction, target = learn.get_preds()
+    with learn.no_bar():
+        prediction, target = learn.get_preds()
     
     prediction = prediction.numpy().squeeze()
     target = target.numpy().squeeze()
@@ -76,7 +76,8 @@ if __name__ == '__main__':
                                  chunksize = 100000, numerapi = napi,
                                  filename = tourn)
     print("Generating Predictions...\n")
-    predictions.get_predictions(print=False)
+    with learn.no_bar():
+        predictions.get_predictions(print=False)
 
     predictions.save_predictions()
     print("Predictions Saved!")
