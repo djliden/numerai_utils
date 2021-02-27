@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Experiment-Specific Configurations
+src/config/experiments/*
+
 # Data
 input/
 output/

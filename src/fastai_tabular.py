@@ -55,6 +55,13 @@ if __name__ == '__main__':
 
     # Model Setup
     print("setting up the fastai model")
+    mod_config = tabular_config(ps=cfg.DROPOUT_P, # per-layer dropout prob
+                                embed_p=cfg.EMBED_DROPOUT_P,
+                                y_range=cfg.Y_RANGE,
+                                use_bn=cfg.USE_BATCHNORM, #use batchnorm y/n
+                                bn_final=cfg.BATCHNORM_FINAL,
+                                bn_cont=True, #batchnorm continuous vars
+                                )
     learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
                         loss_func=MSELossFlat(),
                         metrics = [PearsonCorrCoef()])
@@ -106,6 +113,7 @@ if __name__ == '__main__':
     #cfg.merge_from_list(results)
     # Export Config+Results as Log
     log_name = (f'logs/'
+                f'{cfg.MODEL.GROUP}_'
                 f'{cfg.MODEL.NAME}_'
                 f'{cfg.SYSTEM.TIME}'
                 f'.yaml'
