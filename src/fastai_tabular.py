@@ -1,4 +1,5 @@
 # import dependencies
+import sys
 import argparse
 import pandas as pd
 import numpy as np
@@ -26,8 +27,9 @@ torch.cuda.manual_seed(1)
 
 # Start with main code
 if __name__ == '__main__':
+    configpath = sys.argv[1]
     cfg = get_cfg_defaults()
-    cfg.merge_from_file("./src/config/experiments/expt_1.yaml")
+    cfg.merge_from_file(configpath)
     ct = time.localtime()
     current_time = f'{ct[0]}_{ct[1]}_{ct[2]}_{ct[3]}{ct[4]}'
     cfg.SYSTEM.TIME = current_time
