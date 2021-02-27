@@ -1,4 +1,5 @@
 # import dependencies
+import argparse
 import pandas as pd
 import numpy as np
 import time
@@ -26,7 +27,7 @@ torch.cuda.manual_seed(1)
 # Start with main code
 if __name__ == '__main__':
     cfg = get_cfg_defaults()
-    cfg.merge_from_file("./src/config/experiments/config_debug.yaml")
+    cfg.merge_from_file("./src/config/experiments/expt_1.yaml")
     ct = time.localtime()
     current_time = f'{ct[0]}_{ct[1]}_{ct[2]}_{ct[3]}{ct[4]}'
     cfg.SYSTEM.TIME = current_time
@@ -55,11 +56,11 @@ if __name__ == '__main__':
 
     # Model Setup
     print("setting up the fastai model")
-    mod_config = tabular_config(ps=cfg.DROPOUT_P, # per-layer dropout prob
-                                embed_p=cfg.EMBED_DROPOUT_P,
-                                y_range=cfg.Y_RANGE,
-                                use_bn=cfg.USE_BATCHNORM, #use batchnorm y/n
-                                bn_final=cfg.BATCHNORM_FINAL,
+    mod_config = tabular_config(ps=cfg.MODEL.DROPOUT_P, # per-layer dropout prob
+                                embed_p=cfg.MODEL.EMBED_DROPOUT_P,
+                                y_range=cfg.MODEL.Y_RANGE,
+                                use_bn=cfg.MODEL.USE_BATCHNORM, #use batchnorm
+                                bn_final=cfg.MODEL.BATCHNORM_FINAL,
                                 bn_cont=True, #batchnorm continuous vars
                                 )
     learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
@@ -69,10 +70,13 @@ if __name__ == '__main__':
     #master_bar, progress_bar = force_console_behavior()
     # Train Model
     print("training the model\n")
-    print("[N | train --------- | valid ----------- | corr ------------- | time]")
+    print(("[N | train --------- | valid ----------- |"
+           " corr ------------- | time]"))
+    start = time.time()
     with learn.no_bar():
         learn.fit_one_cycle(n_epoch = cfg.TRAIN.N_EPOCHS,
                             wd = cfg.MODEL.WEIGHT_DECAY)
+    end = time. time()
 
     # Get Metrics
     ## Sharpe
@@ -91,7 +95,8 @@ if __name__ == '__main__':
     ## Corr
     correl = val_corr(eval_df)
 
-    print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
+    print((f'Model training has completed.\nValidation correlation:'
+           f' {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}'))
     if cfg.EVAL.SAVE_PREDS:
         print(f'Generating and Saving Predictions')
         predictions = FastSubmission(dls = dls, learner=learn, chunk=True,
@@ -106,10 +111,10 @@ if __name__ == '__main__':
         print("Following configuration: not saving predictions")
 
     # Append results to config file
-    #results = ["RESULTS.CORREL", correl, "RESULTS.SHARPE", sharpe]
     cfg.defrost()
     cfg.RESULTS.CORREL = correl
     cfg.RESULTS.SHARPE = sharpe
+    cfg.RESULTS.TIME = end-start
     #cfg.merge_from_list(results)
     # Export Config+Results as Log
     log_name = (f'logs/'

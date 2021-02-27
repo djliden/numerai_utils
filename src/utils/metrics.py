@@ -24,4 +24,4 @@ def val_corr(df: pd.DataFrame) -> np.float32:
         """ Calculate Spearman correlation for Pandas' apply method """
         return spearmanr(sub_df["target"],  sub_df["prediction"])[0]
     corrs = df.groupby("era").apply(_score)
-    return corrs.mean() / df.era.nunique()
+    return corrs.mean() 
