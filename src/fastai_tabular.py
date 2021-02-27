@@ -108,7 +108,8 @@ if __name__ == '__main__':
     log_name = (f'logs/'
                 f'{cfg.MODEL.NAME}_'
                 f'{cfg.SYSTEM.TIME}'
-                f'.yaml')
+                f'.yaml'
+                )
     cfg.dump(stream=open(output / log_name, 'w'))
 
     del learn

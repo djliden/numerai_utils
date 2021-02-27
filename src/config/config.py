@@ -8,6 +8,7 @@ _C.DATA = CN()
 _C.MODEL = CN(new_allowed=True)
 _C.EVAL = CN()
 _C.RESULTS = CN(new_allowed=True)
+_C.SESSION = CN(new_allowed=True)
 # debugging mode yes or no
 _C.SYSTEM.DEBUG = True
 
@@ -19,6 +20,9 @@ _C.DATA.SAVE_PROCESSED_TRAIN = True
 _C.TRAIN.N_EPOCHS = 6
 
 _C.EVAL.SAVE_PREDS = True
+
+_C.MODEL.NAME = "Unnamed"
+_C.SESSION.NAME = "Default"
 
 
 def get_cfg_defaults():
