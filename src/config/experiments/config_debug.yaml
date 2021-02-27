@@ -1,0 +1,7 @@
+MODEL:
+    WEIGHT_DECAY: 0.5
+    LAYERS: [400, 200]
+EVAL:
+    SAVE_PREDS: False
+TRAIN:
+    N_EPOCHS: 2

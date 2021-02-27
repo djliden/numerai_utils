@@ -3,8 +3,9 @@ import pandas as pd
 from tqdm import tqdm
 from fastai.tabular.all import *
 
-def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, use_era:bool = False,
-                          save = True, refresh = False, debug = True):
+def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, debug:bool,
+                          use_era:bool = False, save = True,
+                          refresh = False):
     data_dir = train.parents[0]
 
     if refresh or not((data_dir/"training_processed.csv").exists()):

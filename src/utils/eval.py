@@ -8,7 +8,7 @@ class FastSubmission:
 
     def __init__(self, dls, learner, filename, 
                  numerapi, chunk:bool = True, chunksize:int = 60000,
-                 debug:bool = False, outpath = Path("../output/")):
+                 debug:bool = False, outpath = Path("../output/predictions/")):
         self.dls = dls
         self.learn = learner
         self.chunk = chunk

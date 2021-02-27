@@ -1,8 +1,7 @@
-# Try to figure out segfault?
-import faulthandler
 # import dependencies
 import pandas as pd
 import numpy as np
+from config.config import get_cfg_defaults
 from fastai.tabular.all import *
 from pathlib import Path
 
@@ -24,7 +23,11 @@ torch.cuda.manual_seed(1)
 
 # Start with main code
 if __name__ == '__main__':
-    faulthandler.enable()
+    cfg = get_cfg_defaults()
+    cfg.merge_from_file("./src/config/experiments/config_debug.yaml")
+    cfg.freeze()
+    print(cfg)
+    
     torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Setup Credentials
     credential()
@@ -39,11 +42,14 @@ if __name__ == '__main__':
 
     # Get DataLoaders
     print("setting up fastai dataloaders")
-    dls = get_tabular_pandas_dl(train=train, tourn=tourn, refresh=False, save=True)
+    dls = get_tabular_pandas_dl(train=train, tourn=tourn,
+                                refresh=cfg.DATA.REFRESH,
+                                save=cfg.DATA.SAVE_PROCESSED_TRAIN,
+                                debug = cfg.SYSTEM.DEBUG)
 
     # Model Setup
     print("setting up the fastai model")
-    learn = tabular_learner(dls, layers=[200,100],
+    learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
                         loss_func=MSELossFlat(),
                         metrics = [PearsonCorrCoef()])
                         
@@ -51,7 +57,8 @@ if __name__ == '__main__':
     # Train Model
     print("training the model")
     with learn.no_bar():
-        learn.fit_one_cycle(2, wd = 2)
+        learn.fit_one_cycle(n_epoch = cfg.TRAIN.N_EPOCHS,
+                            wd = cfg.MODEL.WEIGHT_DECAY)
 
     # Get Metrics
     ## Sharpe
@@ -71,15 +78,18 @@ if __name__ == '__main__':
     correl = val_corr(eval_df)
 
     print(f'Model training has completed.\nValidation correlation: {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}')
-    print(f'Generating and Saving Predictions')
-    predictions = FastSubmission(dls = dls, learner=learn, chunk=True,
-                                 chunksize = 100000, numerapi = napi,
-                                 filename = tourn)
-    print("Generating Predictions...\n")
-    with learn.no_bar():
-        predictions.get_predictions(print=False)
+    if cfg.EVAL.SAVE_PREDS:
+        print(f'Generating and Saving Predictions')
+        predictions = FastSubmission(dls = dls, learner=learn, chunk=True,
+                                     chunksize = 100000, numerapi = napi,
+                                     filename = tourn)
+        print("Generating Predictions...\n")
+        with learn.no_bar():
+            predictions.get_predictions(print=False)
+        predictions.save_predictions()
+        print("Predictions Saved!")
+    else:
+        print("Following configuration: not saving predictions")
 
-    predictions.save_predictions()
-    print("Predictions Saved!")
     del learn
     gc.collect()
