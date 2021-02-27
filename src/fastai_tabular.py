@@ -1,6 +1,7 @@
 # import dependencies
 import pandas as pd
 import numpy as np
+import time
 from config.config import get_cfg_defaults
 from fastai.tabular.all import *
 from pathlib import Path
@@ -21,10 +22,14 @@ np.random.seed(1)
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
 
+
 # Start with main code
 if __name__ == '__main__':
     cfg = get_cfg_defaults()
     cfg.merge_from_file("./src/config/experiments/config_debug.yaml")
+    ct = time.localtime()
+    current_time = f'{ct[0]}_{ct[1]}_{ct[2]}_{ct[3]}{ct[4]}'
+    cfg.SYSTEM.TIME = current_time
     cfg.freeze()
     print(cfg)
     
@@ -39,6 +44,7 @@ if __name__ == '__main__':
     #current_file = Path(data_dir/f"numerai_dataset_{round}.zip")
     train = Path(f"./input/numerai_dataset_{round}/numerai_training_data.csv")
     tourn = Path(f"./input/numerai_dataset_{round}/numerai_tournament_data.csv")
+    output = Path("./output/")
 
     # Get DataLoaders
     print("setting up fastai dataloaders")
@@ -55,7 +61,8 @@ if __name__ == '__main__':
                         
     #master_bar, progress_bar = force_console_behavior()
     # Train Model
-    print("training the model")
+    print("training the model\n")
+    print("[N | train --------- | valid ----------- | corr ------------- | time]")
     with learn.no_bar():
         learn.fit_one_cycle(n_epoch = cfg.TRAIN.N_EPOCHS,
                             wd = cfg.MODEL.WEIGHT_DECAY)
@@ -90,6 +97,19 @@ if __name__ == '__main__':
         print("Predictions Saved!")
     else:
         print("Following configuration: not saving predictions")
+
+    # Append results to config file
+    #results = ["RESULTS.CORREL", correl, "RESULTS.SHARPE", sharpe]
+    cfg.defrost()
+    cfg.RESULTS.CORREL = correl
+    cfg.RESULTS.SHARPE = sharpe
+    #cfg.merge_from_list(results)
+    # Export Config+Results as Log
+    log_name = (f'logs/'
+                f'{cfg.MODEL.NAME}_'
+                f'{cfg.SYSTEM.TIME}'
+                f'.yaml')
+    cfg.dump(stream=open(output / log_name, 'w'))
 
     del learn
     gc.collect()

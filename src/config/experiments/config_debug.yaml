@@ -1,4 +1,5 @@
 MODEL:
+    NAME: "config_debug"
     WEIGHT_DECAY: 0.5
     LAYERS: [400, 200]
 EVAL:

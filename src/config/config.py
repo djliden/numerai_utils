@@ -2,11 +2,12 @@ from pathlib import Path
 from yacs.config import CfgNode as CN
 _C = CN()
 
-_C.SYSTEM = CN()
+_C.SYSTEM = CN(new_allowed = True)
 _C.TRAIN = CN()
 _C.DATA = CN()
 _C.MODEL = CN(new_allowed=True)
 _C.EVAL = CN()
+_C.RESULTS = CN(new_allowed=True)
 # debugging mode yes or no
 _C.SYSTEM.DEBUG = True
 
