@@ -11,7 +11,8 @@ src/config/experiments/*
 
 # Data
 input/
-output/
+output/predictions/*.csv
+output/logs/*.yaml
 
 # Distribution / packaging
 .Python
