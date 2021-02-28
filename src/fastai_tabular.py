@@ -54,7 +54,8 @@ if __name__ == '__main__':
     dls = get_tabular_pandas_dl(train=train, tourn=tourn,
                                 refresh=cfg.DATA.REFRESH,
                                 save=cfg.DATA.SAVE_PROCESSED_TRAIN,
-                                debug = cfg.SYSTEM.DEBUG)
+                                debug = cfg.SYSTEM.DEBUG,
+                                batchsize = cfg.DATA.BATCH_SIZE)
 
     # Model Setup
     print("setting up the fastai model")
@@ -66,7 +67,7 @@ if __name__ == '__main__':
                                 bn_cont=True, #batchnorm continuous vars
                                 )
     learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
-                        loss_func=MSELossFlat(),
+                            loss_func=MSELossFlat(),
                             metrics = [PearsonCorrCoef()],
                             config = mod_config)
                         
@@ -92,7 +93,8 @@ if __name__ == '__main__':
     prediction, target
 
     era = dls.valid_ds.items['era']
-    eval_df = pd.DataFrame({'prediction':prediction, 'target':target, 'era':era}).reset_index()
+    eval_df = pd.DataFrame({'prediction':prediction,
+                            'target':target, 'era':era}).reset_index()
     sharpe = sharpe(eval_df)
 
     ## Corr
@@ -112,6 +114,8 @@ if __name__ == '__main__':
         print("Predictions Saved!")
     else:
         print("Following configuration: not saving predictions")
+    if cfg.EVAL.SUBMIT_PREDS:
+        predictions.submit()
 
     # Append results to config file
     cfg.defrost()

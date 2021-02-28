@@ -5,7 +5,7 @@ from fastai.tabular.all import *
 
 def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, debug:bool,
                           use_era:bool = False, save = True,
-                          refresh = False):
+                          refresh = False, batchsize=64):
     data_dir = train.parents[0]
 
     if refresh or not((data_dir/"training_processed.csv").exists()):
@@ -44,4 +44,4 @@ def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, debug:bool,
                         cont_names=list(feature_cols.values),
                         y_names=target_cols, splits = splits)
 
-    return(data.dataloaders())
+    return(data.dataloaders(bs = batchsize))
