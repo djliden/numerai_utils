@@ -67,7 +67,8 @@ if __name__ == '__main__':
                                 )
     learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
                         loss_func=MSELossFlat(),
-                        metrics = [PearsonCorrCoef()])
+                            metrics = [PearsonCorrCoef()],
+                            config = mod_config)
                         
     #master_bar, progress_bar = force_console_behavior()
     # Train Model
