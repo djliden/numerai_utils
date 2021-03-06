@@ -68,6 +68,7 @@ if __name__ == '__main__':
                                 )
     learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
                             loss_func=MSELossFlat(),
+                            lr = cfg.MODEL.LEARNING_RATE,
                             metrics = [PearsonCorrCoef()],
                             config = mod_config)
                         
