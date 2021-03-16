@@ -13,6 +13,7 @@ src/config/experiments/*
 input/
 output/predictions/*.csv
 output/logs/*.yaml
+output/predictions*
 
 # Distribution / packaging
 .Python

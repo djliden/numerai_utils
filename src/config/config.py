@@ -1,34 +1,35 @@
-from pathlib import Path
-from yacs.config import CfgNode as CN
-_C = CN()
+from os import PathLike
+import yaml
 
-_C.SYSTEM = CN(new_allowed = True)
-_C.TRAIN = CN()
-_C.DATA = CN()
-_C.MODEL = CN(new_allowed=True)
-_C.EVAL = CN()
-_C.RESULTS = CN(new_allowed=True)
-_C.SESSION = CN(new_allowed=True)
-# debugging mode yes or no
-_C.SYSTEM.DEBUG = True
+class Configuration:
+    def __init__(self,
+                 default_cfg:PathLike,
+                 model_cfg:PathLike,
+                 user_cfg:PathLike = None):
+        """Class for accessing and updating configuration files
 
-# Refresh data
-_C.DATA.REFRESH = False
-# Save Processed Training Data
-_C.DATA.SAVE_PROCESSED_TRAIN = True
-_C.DATA.BATCH_SIZE = 1024
+        kwargs:
+        * default_cfg: path to default configutation file
+        * model_cfg: path to model-default configuration file
+        * user_cfg: path to user-specified configuration file
+        """
+        self.def = yaml.load(open(default_cfg, 'r'), Loader = yaml.CLoader)
+        self.model = yaml.load(open(model_cfg, 'r'), Loader = yaml.CLoader)
+        if user_cfg:
+            self.user = yaml.load(open(user_cfg, 'r'), Loader = yaml.CLoader)
 
-_C.TRAIN.N_EPOCHS = 6
+    def merge_configs(self):
+        self.config = dict()
+        self.config.update(self.def)
+        self.config.update(self.model)
+        if user_cfg: self.config.update(self.user)
 
-_C.EVAL.SAVE_PREDS = True
-_C.EVAL.SUBMIT_PREDS = False
-
-_C.MODEL.NAME = "Unnamed"
-_C.SESSION.NAME = "Default"
-
-
-def get_cfg_defaults():
-  """Get a yacs CfgNode object with default values for my_project."""
-  # Return a clone so that the defaults will not be altered
-  # This is for the "local variable" use pattern
-  return _C.clone()
+    def init_config(self):
+        self.merge_configs()
+        self.__dict__.update(self.config)
+    
+class Log:
+    def __init__(self, config):
+        self.config = config
+    
+    
