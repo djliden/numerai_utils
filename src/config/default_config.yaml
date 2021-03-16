@@ -1,0 +1,10 @@
+SYSTEM:
+    DEBUG: False
+DATA:
+    REFRESH: False
+    SAVE_PROCESSED_TRAIN: True
+EVAL:
+    SAVE_PREDS: True
+    SUBMIT_PREDS: False
+MODEL:
+    NAME: "Unnamed"
