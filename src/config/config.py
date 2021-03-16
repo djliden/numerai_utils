@@ -1,4 +1,5 @@
 from os import PathLike
+from fastcore.basics import AttrDict
 import yaml
 
 """
@@ -44,18 +45,67 @@ The challenge is with class attribute <-> dict interoperability.
 
 """
 
-class Configuration(dict):
+
+class Container(dict):
+    """A parent class for configuration and logging classes"""
+    def __init__(self, *args, **kwargs):
+        super(Container, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+        
+    @staticmethod
+    def from_nested_dicts(data):
+        """ Construct nested AttrDicts from nested dictionaries."""
+        if not isinstance(data, dict):
+            return data
+        else:
+            return Container({key: Container.from_nested_dicts(data[key])
+                                for key in data})
+        
+    def _freeze(self):
+        """Prevent changes to the __dict__"""
+        self.__isFrozen = True
+        
+    def _thaw(self):
+        """Allow changes to the __dict__"""
+        self.__isFrozen = False
+
+    
+class Configuration(Container):
     """Class for accessing and updating configuration files
     
         kwargs:
         * config: path to an initial configuration file
         """
-    def __init__(self, config:PathLike = None):
+    __isFrozen = False
+    
+    def __init__(self, config = None):
+        super().__init__()
         self.config = dict()
         if config:
             config = yaml.load(open(config, 'r'), Loader = yaml.SafeLoader)
             self.config.update(config)
-        self.__dict__.update(self.config)
+        new_dict = self.from_nested_dicts(self.config)
+        #self.__dict__.update(self.config)
+        self.__dict__ = new_dict
+        self._freeze(self)
+        
+        
+
+    def __setattr__(self, key, value):
+        """Prevent directly setting attributes
+
+        This is to ensure that all configuration options are defined
+        directly through the dictionary or YAML adding methods. This
+        limitation could be lifted in the future.
+        """
+        if self.__isFrozen and not hasattr(self, key):
+            raise TypeError(("Directly adding new attributes to a Configuration "
+                             "object using dot notation is not supported. Please use "
+                             "th update_from_yaml or update_from_dict methods"))
+        object.__setattr__(self, key, value)
+
+
+    
         
     def update_from_yaml(self, new_config):
         """Update the stored configuration
@@ -68,9 +118,11 @@ class Configuration(dict):
         the new value. If new_config includes new key/value pairs, they
         will be added to the existing config.
         """
+        self._thaw()
         new_config = yaml.load(open(new_config, 'r'), Loader = yaml.SafeLoader)
         self.config.update(new_config)
         self.__dict__.update(self.config)
+        self._freeze()
         
     def update_from_dict(self, new_config:dict):
         """Update the stored configuration
@@ -83,8 +135,10 @@ class Configuration(dict):
         the new value. If new_config includes new key/value pairs, they
         will be added to the existing config.
         """
+        self._thaw()
         self.config.update(new_config)    
         self.__dict__.update(self.config)
+        self._freeze()
 
     def print_config(self):
         print(yaml.dump(self.config))
