@@ -45,3 +45,30 @@ def get_tabular_pandas_dl(train:PathLike, tourn:PathLike, debug:bool,
                         y_names=target_cols, splits = splits)
 
     return(data.dataloaders(bs = batchsize))
+
+
+def prep_data(round):
+    napi.download_current_dataset()
+    tourn_file = Path(f'./numerai_dataset_{napi.get_current_round()}/numerai_tournament_data.csv')
+    train_file = Path(f'./numerai_dataset_{napi.get_current_round()}/numerai_training_data.csv')
+    processed_train_file = Path('./training_processed.csv')
+
+if processed_train_file.exists():
+    print("Loading the processed training data from file\n")
+    training_data = pd.read_csv(processed_train_file)
+else:
+    tourn_iter_csv = pd.read_csv(tourn_file, iterator=True, chunksize=1e6)
+    val_df = pd.concat([chunk[chunk['data_type'] == 'validation'] for chunk in tqdm(tourn_iter_csv)])
+    tourn_iter_csv.close()
+    training_data = pd.read_csv(train_file)
+    training_data = pd.concat([training_data, val_df])
+    training_data.reset_index(drop=True, inplace=True)
+    print("Training Dataset Generated! Saving to file ...")
+    training_data.to_csv(processed_train_file, index=False)
+
+
+feature_cols = training_data.columns[training_data.columns.str.startswith('feature')]
+target_cols = ['target']
+
+train_idx = training_data.index[training_data.data_type=='train'].tolist()
+val_idx = training_data.index[training_data.data_type=='validation'].tolist()

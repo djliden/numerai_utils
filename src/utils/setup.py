@@ -39,4 +39,6 @@ def download_current(refresh:bool = False, path:str = "./input/", napi=init_nume
     else:
         if current_file.exists(): current_file.unlink()
         napi.download_current_dataset(data_dir)
+
+def process_current():
     

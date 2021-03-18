@@ -7,4 +7,5 @@ EVAL:
     SAVE_PREDS: True
     SUBMIT_PREDS: False
 MODEL:
+    MODEL: "lin_reg"
     NAME: "Unnamed"

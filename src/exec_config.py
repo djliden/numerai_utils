@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 import time
-from config.config import get_cfg_defaults
+from config.config import Config
 from fastai.tabular.all import *
 from pathlib import Path
 
@@ -11,6 +11,8 @@ from utils.eval import FastSubmission
 from utils.setup import credential
 from utils.setup import download_current
 from utils.setup import init_numerapi
+
+import models
 
 from utils.prep_data import get_tabular_pandas_dl
 
@@ -27,12 +29,17 @@ torch.cuda.manual_seed(1)
 # Start with main code
 if __name__ == '__main__':
     configpath = sys.argv[1]
-    cfg = get_cfg_defaults()
-    cfg.merge_from_file(configpath)
+    default_config = Path("./config/default_config.yaml")
+    cfg = Config(default_config)
+    cfg.update_config(configpath)
+    model = cfg.MODEL.MODEL
+    model_cfg = PATH(f'./models/default_configs/{model}.yaml')
+    model_cls = model.title().replace("_","")
+    cfg.update_config(model_cfg)
+    cfg.update_config(configpath)
     ct = time.localtime()
     current_time = f'{ct[0]}_{ct[1]}_{ct[2]}_{ct[3]}{ct[4]}'
-    cfg.SYSTEM.TIME = current_time
-    cfg.freeze()
+    cfg.update_config({'SYSTEM':{'TIME':current_time}})
     print(cfg)
     
     torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,8 +53,16 @@ if __name__ == '__main__':
     #current_file = Path(data_dir/f"numerai_dataset_{round}.zip")
     train = Path(f"./input/numerai_dataset_{round}/numerai_training_data.csv")
     tourn = Path(f"./input/numerai_dataset_{round}/numerai_tournament_data.csv")
+    processed = Path('./input/training_processed.csv')
     output = Path("./output/")
 
+
+    # Load Model
+    mod = getattr(models, model_cls)()
+
+    # CV Setup
+    
+    
     # Get DataLoaders
     print("setting up fastai dataloaders")
     dls = get_tabular_pandas_dl(train=train, tourn=tourn,
