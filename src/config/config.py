@@ -61,6 +61,7 @@ class BaseConfig:
         """
         self.config.update(new_config)    
         self.__dict__.update(new_config)
+        
 
 class Config(BaseConfig):
     def __init__(self, config):
@@ -96,3 +97,8 @@ class Config(BaseConfig):
             stream = open(path, 'w')
             yaml.dump(self.config, stream)
         print(yaml.dump(self.config, Dumper=yaml.SafeDumper))
+        
+    def __repr__(self):
+        return f'Config Object with Keys:\n{yaml.dump(self.config, Dumper=yaml.SafeDumper)}'
+    def __str__(self):
+        return str(yaml.dump(self.config, Dumper=yaml.SafeDumper))
