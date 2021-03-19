@@ -1,5 +1,7 @@
 MODEL:
+    BATCH_SIZE: 2048
     N_EPOCHS: 6
+    NAME: "Unnamed"
     TYPE: "fastai tabular"
     LAYERS: [400, 400]
     DROPOUT_P: 0
@@ -7,4 +9,4 @@ MODEL:
     USE_BATCHNORM: True
     BATCHNORM_FINAL: True
     LEARNING_RATE: null
-    
+    WEIGHT_DECAY: 0

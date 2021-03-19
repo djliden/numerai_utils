@@ -3,6 +3,7 @@ import numerapi
 from dotenv import load_dotenv, find_dotenv
 from getpass import getpass
 from pathlib import Path
+import pandas as pd
 
 def credential():
     dotenv_path = find_dotenv()
@@ -40,5 +41,18 @@ def download_current(refresh:bool = False, path:str = "./input/", napi=init_nume
         if current_file.exists(): current_file.unlink()
         napi.download_current_dataset(data_dir)
 
-def process_current():
-    
+def process_current(processed_train_file, train_file, tourn_file):
+    if processed_train_file.exists():
+        print("Loading the processed training data from file\n")
+        training_data = pd.read_csv(processed_train_file)
+    else:
+        tourn_iter_csv = pd.read_csv(tourn_file, iterator=True, chunksize=1e6)
+        val_df = pd.concat([chunk[chunk['data_type'] == 'validation'] \
+                            for chunk in tqdm(tourn_iter_csv)])
+        tourn_iter_csv.close()
+        training_data = pd.read_csv(train_file)
+        training_data = pd.concat([training_data, val_df])
+        training_data.reset_index(drop=True, inplace=True)
+        print("Training Dataset Generated! Saving to file ...")
+        training_data.to_csv(processed_train_file, index=False)
+

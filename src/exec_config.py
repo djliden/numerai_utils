@@ -4,36 +4,37 @@ import pandas as pd
 import numpy as np
 import time
 from config.config import Config
-from fastai.tabular.all import *
+from importlib import import_module
 from pathlib import Path
 
 from utils.eval import FastSubmission
 from utils.setup import credential
 from utils.setup import download_current
+from utils.setup import process_current
 from utils.setup import init_numerapi
 
-import models
+#import src.models
 
-from utils.prep_data import get_tabular_pandas_dl
+from src.utils.prep_data import get_tabular_pandas_dl
 
-from utils.metrics import sharpe, val_corr
+from src.utils.metrics import sharpe, val_corr
 
 # set flags / seeds
 import gc
-torch.backends.cudnn.benchmark = True
+#torch.backends.cudnn.benchmark = True
 np.random.seed(1)
-torch.manual_seed(1)
-torch.cuda.manual_seed(1)
+#torch.manual_seed(1)
+#torch.cuda.manual_seed(1)
 
 
 # Start with main code
 if __name__ == '__main__':
-    configpath = sys.argv[1]
+    # snake case model argument
+    model = sys.argv[1]
+    configpath = sys.argv[2]
     default_config = Path("./config/default_config.yaml")
     cfg = Config(default_config)
-    cfg.update_config(configpath)
-    model = cfg.MODEL.MODEL
-    model_cfg = PATH(f'./models/default_configs/{model}.yaml')
+    model_cfg = Path(f'./models/default_configs/{model}.yaml')
     model_cls = model.title().replace("_","")
     cfg.update_config(model_cfg)
     cfg.update_config(configpath)
@@ -43,12 +44,11 @@ if __name__ == '__main__':
     print(cfg)
     
     torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # Setup Credentials
+    # 1. Setup Credentials and NumerAPI object
     credential()
     napi = init_numerapi()
-    download_current(napi = napi)
 
-    # Paths
+    # 2. Define key paths
     round = napi.get_current_round()
     #current_file = Path(data_dir/f"numerai_dataset_{round}.zip")
     train = Path(f"./input/numerai_dataset_{round}/numerai_training_data.csv")
@@ -56,9 +56,13 @@ if __name__ == '__main__':
     processed = Path('./input/training_processed.csv')
     output = Path("./output/")
 
-
-    # Load Model
-    mod = getattr(models, model_cls)()
+    # 3. Download and process Data
+    download_current(napi = napi)
+    process_current(processed, train, tourn)
+    
+    # 4. Load Model
+    modmod = import_module(f'src.models.{model}')
+    mod = getattr(modmod, model_cls)(cfg.MODEL.config)
 
     # CV Setup
     
