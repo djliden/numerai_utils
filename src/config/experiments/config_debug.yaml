@@ -4,5 +4,5 @@ MODEL:
     LAYERS: [400, 200]
 EVAL:
     SAVE_PREDS: False
-TRAIN:
+MODEL:
     N_EPOCHS: 2

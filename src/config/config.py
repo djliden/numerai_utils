@@ -32,7 +32,21 @@ class BaseConfig:
         for key in self.config.keys():
             if isinstance(self.config[key], dict):
                 self.__setattr__(key, Config(self.config[key]))
-                
+
+    def merge_dicts(self, dict1, dict2):
+        """ Recursively merges dict2 into dict1
+        source: https://stackoverflow.com/a/24837438/11598548
+        
+        """
+        if not isinstance(dict1, dict) or not isinstance(dict2, dict):
+            return dict2
+        for k in dict2:
+            if k in dict1:
+                dict1[k] = self.merge_dicts(dict1[k], dict2[k])
+            else:
+                dict1[k] = dict2[k]
+        return dict1           
+
     def update_from_yaml(self, new_config):
         """Update the stored configuration
 
@@ -45,7 +59,7 @@ class BaseConfig:
         will be added to the existing config.
         """
         new_config = yaml.load(open(new_config, 'r'), Loader = yaml.SafeLoader)
-        self.config.update(new_config)
+        self.config = self.merge_dicts(self.config, new_config)
         self.__dict__.update(self.config)
         
     def update_from_dict(self, new_config:dict):
@@ -59,7 +73,7 @@ class BaseConfig:
         the new value. If new_config includes new key/value pairs, they
         will be added to the existing config.
         """
-        self.config.update(new_config)    
+        self.config = self.merge_dicts(self.config, new_config)
         self.__dict__.update(new_config)
         
 
