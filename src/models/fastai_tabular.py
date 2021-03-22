@@ -36,18 +36,25 @@ class FastaiTabular:
                                        metrics = [SpearmanCorrCoef()])
 
     def learn(self):
-        self.learner.fit_one_cycle(self.N_EPOCHS, self.WEIGHT_DECAY)
+        print("training the model\n")
+        print(("[N | train --------- | valid ----------- |"
+               " corr ------------- | time]"))
+        with self.learner.no_bar():
+            self.learner.fit_one_cycle(self.N_EPOCHS, self.WEIGHT_DECAY)
 
 
     def fit(self, df, **kwargs):
         self.dls = self.build_data_loaders(df, kwargs['cont_names'],
-                                           kwargs['train_idx'], kwargs['val_idx'])                                           
+                                           kwargs['train_idx'],
+                                           kwargs['val_idx'])                                           
         self.init_learner()
         self.learn()
         
     def predict(self, data):
         test_dl = self.dls.test_dl(data)
-        preds_out, _ = self.learner.get_preds(dl=test_dl, inner = True)
+        with self.learner.no_bar():
+            preds_out, _ = self.learner.get_preds(dl=test_dl, inner = True)
+        
         preds_out = preds_out.tolist()
         preds_out = [item for sublist in preds_out for item in sublist]
         return preds_out
