@@ -6,9 +6,10 @@ DATA:
 EVAL:
     SAVE_PREDS: True
     SUBMIT_PREDS: False
+    CHUNK_SIZE: 1000000
 CV:
-    VAL_START: 205
-    VAL_END: 209
+    VAL_START: 206
+    VAL_END: 210
     VAL_N_ERAS: 4
     GAP: 0
     TRAIN_START: 0

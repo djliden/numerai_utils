@@ -2,7 +2,7 @@ MODEL:
     BATCH_SIZE: 2048
     N_EPOCHS: 6
     NAME: "Unnamed"
-    TYPE: "fastai tabular"
+    TYPE: "fastai_tabular"
     LAYERS: [400, 400]
     DROPOUT_P: 0
     Y_RANGE: [0, 1]

@@ -1,8 +1,16 @@
 MODEL:
     NAME: "config_debug"
     WEIGHT_DECAY: 0.5
-    LAYERS: [400, 200]
+    LAYERS: [100, 100]
 EVAL:
     SAVE_PREDS: False
 MODEL:
-    N_EPOCHS: 2
+    N_EPOCHS: 1
+CV: 
+    VAL_START: 208
+    VAL_END: 210
+    VAL_N_ERAS: 3
+    GAP: 0
+    TRAIN_START: 0
+    TRAIN_STOP: null
+    

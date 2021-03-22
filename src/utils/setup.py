@@ -4,6 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 from getpass import getpass
 from pathlib import Path
 import pandas as pd
+from tqdm import tqdm
 
 def credential():
     dotenv_path = find_dotenv()
@@ -55,4 +56,7 @@ def process_current(processed_train_file, train_file, tourn_file):
         training_data.reset_index(drop=True, inplace=True)
         print("Training Dataset Generated! Saving to file ...")
         training_data.to_csv(processed_train_file, index=False)
-
+        
+    feature_cols = training_data.columns[training_data.columns.str.startswith('feature')]
+    target_cols = ['target']
+    return training_data, feature_cols, target_cols

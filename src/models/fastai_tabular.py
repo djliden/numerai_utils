@@ -11,6 +11,11 @@ class FastaiTabular:
 
     """
     def __init__(self, **kwargs):
+        torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.backends.cudnn.benchmark = True
+        np.random.seed(1)
+        torch.manual_seed(1)
+        torch.cuda.manual_seed(1)
         for key, value in kwargs.items():
             setattr(self, key, value)
     
@@ -25,25 +30,24 @@ class FastaiTabular:
     
 
     def init_learner(self):
-        learn = tabular_learner(dls = self.dls,
-                                layers = self.LAYERS,
-                                loss_func=MSELossFlat(),
-                                metrics = [SpearmanCorrCoef()])
+        self.learner = tabular_learner(dls = self.dls,
+                                       layers = self.LAYERS,
+                                       loss_func=MSELossFlat(),
+                                       metrics = [SpearmanCorrCoef()])
 
     def learn(self):
-        self.learn.fit_one_cycle(self.N_EPOCHS, self.WEIGHT_DECAY)
+        self.learner.fit_one_cycle(self.N_EPOCHS, self.WEIGHT_DECAY)
 
 
-    def fit(self, df, cont_names, train_ix, val_idx):
-        self.dls = self.build_data_loaders(df, cont_names,
-                                           train_idx, val_idx,
-                                           batch_size = self.BATCH_SIZE)
-        self.learn = self.init_learner(self.LAYERS)
-        self.learn.learn(n_epochs = self.N_EPOCHS, wd = 0)
+    def fit(self, df, **kwargs):
+        self.dls = self.build_data_loaders(df, kwargs['cont_names'],
+                                           kwargs['train_idx'], kwargs['val_idx'])                                           
+        self.init_learner()
+        self.learn()
         
     def predict(self, data):
-        self.test_dl = self.dls.test_dl(data)
-        preds_out, _ = self.learn.get_preds(dl=test_dl, inner = True)
-        preds_out = preds_out.toList()
+        test_dl = self.dls.test_dl(data)
+        preds_out, _ = self.learner.get_preds(dl=test_dl, inner = True)
+        preds_out = preds_out.tolist()
         preds_out = [item for sublist in preds_out for item in sublist]
         return preds_out

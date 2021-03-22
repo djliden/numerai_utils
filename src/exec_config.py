@@ -1,4 +1,5 @@
 # import dependencies
+import os
 import sys
 import pandas as pd
 import numpy as np
@@ -6,8 +7,10 @@ import time
 from config.config import Config
 from importlib import import_module
 from pathlib import Path
+from tqdm import tqdm
 
-from utils.eval import FastSubmission
+from utils.eval import save_preds
+from utils.cross_val import EraCV
 from utils.setup import credential
 from utils.setup import download_current
 from utils.setup import process_current
@@ -15,9 +18,8 @@ from utils.setup import init_numerapi
 
 #import src.models
 
-from src.utils.prep_data import get_tabular_pandas_dl
 
-from src.utils.metrics import sharpe, val_corr
+from utils.metrics import sharpe, val_corr
 
 # set flags / seeds
 import gc
@@ -32,9 +34,9 @@ if __name__ == '__main__':
     # snake case model argument
     model = sys.argv[1]
     configpath = sys.argv[2]
-    default_config = Path("./config/default_config.yaml")
+    default_config = Path("./src/config/default_config.yaml")
     cfg = Config(default_config)
-    model_cfg = Path(f'./models/default_configs/{model}.yaml')
+    model_cfg = Path(f'./src/models/default_configs/{model}.yaml')
     model_cls = model.title().replace("_","")
     cfg.update_config(model_cfg)
     cfg.update_config(configpath)
@@ -43,7 +45,6 @@ if __name__ == '__main__':
     cfg.update_config({'SYSTEM':{'TIME':current_time}})
     print(cfg)
     
-    torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # 1. Setup Credentials and NumerAPI object
     credential()
     napi = init_numerapi()
@@ -58,98 +59,58 @@ if __name__ == '__main__':
 
     # 3. Download and process Data
     download_current(napi = napi)
-    process_current(processed, train, tourn)
+    #process_current(processed, train, tourn)
+    training_data, feature_cols, target_cols = process_current(processed, train, tourn)
     
     # 4. Load Model
-    modmod = import_module(f'src.models.{model}')
-    mod = getattr(modmod, model_cls)(cfg.MODEL.config)
+    modmod = import_module(f'models.{model}')
+    mod = getattr(modmod, model_cls)(**cfg.MODEL.config)
 
     # CV Setup
-    
-    
-    # Get DataLoaders
-    print("setting up fastai dataloaders")
-    dls = get_tabular_pandas_dl(train=train, tourn=tourn,
-                                refresh=cfg.DATA.REFRESH,
-                                save=cfg.DATA.SAVE_PROCESSED_TRAIN,
-                                debug = cfg.SYSTEM.DEBUG,
-                                batchsize = cfg.DATA.BATCH_SIZE)
+    era_split = EraCV(eras = training_data.era)
+    corrs = []
+    sharpes = []
+    X, y, era = training_data[feature_cols], training_data.target, training_data.era
+    for valid_era in tqdm(range(cfg.CV.VAL_START, cfg.CV.VAL_END)):
+        train_idx, test_idx = era_split.get_splits(valid_start = valid_era,
+                                                   valid_n_eras = cfg.CV.VAL_N_ERAS,
+                                                   train_start = cfg.CV.TRAIN_START,
+                                                   train_stop = cfg.CV.TRAIN_STOP)
+        mod.fit(df = training_data, cont_names = list(feature_cols),
+                  train_idx = list(train_idx), val_idx = list(test_idx))
+        val_preds = mod.predict(X.iloc[test_idx])
+        target = list(training_data.target.iloc[test_idx])
+        val_era = list(training_data.era[test_idx])
+        eval_df = pd.DataFrame({'prediction':val_preds,
+                                'target':target, 'era':val_era})
+        sharpe_out = sharpe(eval_df)
+        corr_out = val_corr(eval_df)
+        corrs.append(corr_out)
+        sharpes.append(sharpe_out)
+    print(f'validation correlations: {corrs}, mean: {np.array(corrs).mean()}')
+    print(f'validation sharpes: {sharpes}, mean: {np.array(sharpes).mean()}\n')
 
-    # Model Setup
-    print("setting up the fastai model")
-    mod_config = tabular_config(ps=cfg.MODEL.DROPOUT_P, # per-layer dropout prob
-                                embed_p=cfg.MODEL.EMBED_DROPOUT_P,
-                                y_range=cfg.MODEL.Y_RANGE,
-                                use_bn=cfg.MODEL.USE_BATCHNORM, #use batchnorm
-                                bn_final=cfg.MODEL.BATCHNORM_FINAL,
-                                bn_cont=True, #batchnorm continuous vars
-                                )
-    learn = tabular_learner(dls, layers=cfg.MODEL.LAYERS,
-                            loss_func=MSELossFlat(),
-                            lr = cfg.MODEL.LEARNING_RATE,
-                            metrics = [PearsonCorrCoef()],
-                            config = mod_config)
-                        
-    #master_bar, progress_bar = force_console_behavior()
-    # Train Model
-    print("training the model\n")
-    print(("[N | train --------- | valid ----------- |"
-           " corr ------------- | time]"))
-    start = time.time()
-    with learn.no_bar():
-        learn.fit_one_cycle(n_epoch = cfg.TRAIN.N_EPOCHS,
-                            wd = cfg.MODEL.WEIGHT_DECAY)
-    end = time. time()
-
-    # Get Metrics
-    ## Sharpe
-    print("Making Predictions on Validation Set")
-    with learn.no_bar():
-        prediction, target = learn.get_preds()
-    
-    prediction = prediction.numpy().squeeze()
-    target = target.numpy().squeeze()
-    prediction, target
-
-    era = dls.valid_ds.items['era']
-    eval_df = pd.DataFrame({'prediction':prediction,
-                            'target':target, 'era':era}).reset_index()
-    sharpe = sharpe(eval_df)
-
-    ## Corr
-    correl = val_corr(eval_df)
-
-    print((f'Model training has completed.\nValidation correlation:'
-           f' {correl:.3f}.\nvalidation sharpe: {sharpe:.3f}'))
+    print((f'Model training has completed.\nMean validation correlation:'
+           f' {np.array(corrs).mean():.3f}.\nMean validation sharpe: {np.array(sharpes).mean():.3f}'))
     if cfg.EVAL.SAVE_PREDS:
         print(f'Generating and Saving Predictions')
-        predictions = FastSubmission(dls = dls, learner=learn, chunk=True,
-                                     chunksize = 100000, numerapi = napi,
-                                     filename = tourn)
-        print("Generating Predictions...\n")
-        with learn.no_bar():
-            predictions.get_predictions(print=False)
-        predictions.save_predictions()
+        save_preds(modle=mod, chunksize=cfg.EVAL.CHUNK_SIZE,
+                   pred_path = output/"predictions/preds.csv",
+                   feature_cols = feature_cols,
+                   tourn_path=tourn)
         print("Predictions Saved!")
-    else:
-        print("Following configuration: not saving predictions")
     if cfg.EVAL.SUBMIT_PREDS:
-        predictions.submit()
+        print("Submitting Predictions!")
+        napi.upload_predictions(output/"predictions/preds.csv",
+                                model_id=os.environ.get("NUMERAI_MODEL_ID"))
 
     # Append results to config file
-    cfg.defrost()
-    cfg.RESULTS.CORREL = correl
-    cfg.RESULTS.SHARPE = sharpe
-    cfg.RESULTS.TIME = end-start
-    #cfg.merge_from_list(results)
-    # Export Config+Results as Log
-    log_name = (f'logs/'
-                f'{cfg.MODEL.GROUP}_'
-                f'{cfg.MODEL.NAME}_'
-                f'{cfg.SYSTEM.TIME}'
-                f'.yaml'
-                )
-    cfg.dump(stream=open(output / log_name, 'w'))
-
-    del learn
-    gc.collect()
+    RESULTS = {'RESULTS':{
+        'CORRS':corrs,
+        'SHARPES':sharpes,
+        'MEAN_CORR':np.array(corrs).mean().item(),
+        'MEAN_SHARPE':np.array(sharpes).mean().item()
+        }}
+    cfg.update_config(RESULTS)
+    logname = f'logs/log_{cfg.MODEL.TYPE}_{cfg.MODEL.NAME}_{cfg.SYSTEM.TIME}.yaml'
+    cfg.dump_config(path=output/logname)
