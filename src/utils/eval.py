@@ -18,8 +18,8 @@ def save_preds(model, chunksize, pred_path, tourn_path,
         'prediction':preds
         })
     if save:
-        if not ((pred_path).exists()):
-            pred_path.mkdir()
+        if not ((pred_path.parent).exists()):
+            pred_path.parent.mkdir()
         preds_out.to_csv(pred_path, index=False)
     if output:
         return preds_out
