@@ -94,7 +94,7 @@ if __name__ == '__main__':
            f' {np.array(corrs).mean():.3f}.\nMean validation sharpe: {np.array(sharpes).mean():.3f}'))
     if cfg.EVAL.SAVE_PREDS:
         print(f'Generating and Saving Predictions')
-        save_preds(modle=mod, chunksize=cfg.EVAL.CHUNK_SIZE,
+        save_preds(model=mod, chunksize=cfg.EVAL.CHUNK_SIZE,
                    pred_path = output/"predictions/preds.csv",
                    feature_cols = feature_cols,
                    tourn_path=tourn)
