@@ -30,10 +30,14 @@ class FastaiTabular:
     
 
     def init_learner(self):
+        config = tabular_config(ps=self.DROPOUT_P,
+                                use_bn=self.USE_BATCHNORM,
+                                bn_final=self.BATCHNORM_FINAL)
         self.learner = tabular_learner(dls = self.dls,
                                        layers = self.LAYERS,
                                        loss_func=MSELossFlat(),
-                                       metrics = [SpearmanCorrCoef()])
+                                       metrics = [SpearmanCorrCoef()],
+                                       config=config)
 
     def learn(self):
         print("training the model\n")
