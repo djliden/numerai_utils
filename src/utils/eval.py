@@ -14,7 +14,7 @@ def save_preds(model, chunksize, pred_path, tourn_path,
     tourn_iter_csv.close()
     
     preds_out = pd.DataFrame({
-        'ids':ids,
+        'id':ids,
         'prediction':preds
         })
     if save:
