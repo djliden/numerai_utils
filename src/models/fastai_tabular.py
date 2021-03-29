@@ -40,7 +40,8 @@ class FastaiTabular:
         print(("[N | train --------- | valid ----------- |"
                " corr ------------- | time]"))
         with self.learner.no_bar():
-            self.learner.fit_one_cycle(self.N_EPOCHS, self.WEIGHT_DECAY)
+            self.learner.fit_one_cycle(n_epoch = self.N_EPOCHS,
+                                       wd = self.WEIGHT_DECAY)
 
 
     def fit(self, df, **kwargs):
