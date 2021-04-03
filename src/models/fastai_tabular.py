@@ -1,4 +1,5 @@
 from fastai.tabular.all import *
+import fastai.losses
 from pandas.core.frame import DataFrame
 
 class FastaiTabular:
@@ -18,6 +19,11 @@ class FastaiTabular:
         torch.cuda.manual_seed(1)
         for key, value in kwargs.items():
             setattr(self, key, value)
+        self.LOSS_FUNCTION = getattr(fastai.losses,
+                                     self.LOSS_FUNCTION)()
+        self.METRICS = [getattr(fastai.metrics,
+                                metric)() for metric in self.METRICS]
+        
     
     def build_data_loaders(self, df, cont_names,
                            train_idx, val_idx):
@@ -35,8 +41,10 @@ class FastaiTabular:
                                 bn_final=self.BATCHNORM_FINAL)
         self.learner = tabular_learner(dls = self.dls,
                                        layers = self.LAYERS,
-                                       loss_func=MSELossFlat(),
-                                       metrics = [SpearmanCorrCoef()],
+                                       loss_func=self.LOSS_FUNCTION,
+                                       #loss_func=MSELossFlat(),
+                                       metrics = self.METRICS,
+                                       lr = self.LEARNING_RATE,
                                        config=config)
 
     def learn(self):
@@ -51,7 +59,7 @@ class FastaiTabular:
     def fit(self, df, **kwargs):
         self.dls = self.build_data_loaders(df, kwargs['cont_names'],
                                            kwargs['train_idx'],
-                                           kwargs['val_idx'])                                           
+                                           kwargs['val_idx'])
         self.init_learner()
         self.learn()
         
@@ -59,7 +67,7 @@ class FastaiTabular:
         test_dl = self.dls.test_dl(data)
         with self.learner.no_bar():
             preds_out, _ = self.learner.get_preds(dl=test_dl, inner = True)
-        
+            
         preds_out = preds_out.tolist()
         preds_out = [item for sublist in preds_out for item in sublist]
         return preds_out

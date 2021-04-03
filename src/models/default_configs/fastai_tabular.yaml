@@ -3,10 +3,12 @@ MODEL:
     N_EPOCHS: 6
     NAME: "Unnamed"
     TYPE: "fastai_tabular"
+    LOSS_FUNCTION: MSELossFlat
+    METRICS: [SpearmanCorrCoef]
     LAYERS: [400, 400]
     DROPOUT_P: 0
     Y_RANGE: [0, 1]
     USE_BATCHNORM: True
     BATCHNORM_FINAL: True
-    LEARNING_RATE: null
+    LEARNING_RATE: 0.001
     WEIGHT_DECAY: 0

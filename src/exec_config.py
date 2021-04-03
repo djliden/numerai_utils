@@ -55,12 +55,15 @@ if __name__ == '__main__':
     train = Path(f"./input/numerai_dataset_{round}/numerai_training_data.csv")
     tourn = Path(f"./input/numerai_dataset_{round}/numerai_tournament_data.csv")
     processed = Path('./input/training_processed.csv')
+    processed_pkl = Path('./input/training_processed.pkl')
     output = Path("./output/")
 
     # 3. Download and process Data
     download_current(napi = napi)
     #process_current(processed, train, tourn)
-    training_data, feature_cols, target_cols = process_current(processed, train, tourn)
+    training_data, feature_cols, target_cols = process_current(processed,
+                                                               processed_pkl,
+                                                               train, tourn)
     
     # 4. Load Model
     modmod = import_module(f'models.{model}')
