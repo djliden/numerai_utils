@@ -74,7 +74,7 @@ def process_current(processed_train_file, processed_train_pickle,
         training_data = dd.concat([training_data, tmp_df])
         training_data = training_data.compute()
         training_data.reset_index(drop=True, inplace=True)
-        tourn_iter_csv.close()
+       # tourn_iter_csv.close()
         print("Training Dataset Generated! Saving to file ...")
         
         if pickle_out:
