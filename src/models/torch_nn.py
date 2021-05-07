@@ -26,6 +26,22 @@ class NumerTorch(nn.Module):
         out = self.net(x)
         return out
 
+class NumerData(Dataset):
+    def __init__(self, data, feature_cols, target_cols):
+        self.data = data
+        self.features = data[feature_cols].copy().values.astype(np.float32)
+        self.targets = data[target_cols].copy().values.astype(np.float32)
+        self.eras = data.era.copy().values
+
+    def __len__(self):
+        return(len(self.data))
+    
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist() 
+
+        return self.features[idx], self.targets[idx], self.eras[idx]
+
 def era_spearman(preds:float, targs:float, eras:str) -> np.float32:
     """
     Calculate the correlation by using grouped per-era data
